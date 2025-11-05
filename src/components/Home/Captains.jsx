@@ -9,8 +9,8 @@ import Misha_Manoj from  '../../assets/arts/Misha_Manoj.png'
 import Muhammed_Fahad from  '../../assets/arts/Muhammed_Fahad.png'
 import Fathima_Rabeeha from  '../../assets/arts/Fathima_Rabeeha.png'
 import Munavvar from  '../../assets/arts/munnavar.png'
-import Shamil from  '../../assets/arts/Shamil.png'
-import Saleel from  '../../assets/arts/Saleel.png'
+import Shamil from  '../../assets/arts/shamil.png'
+import Saleel from  '../../assets/arts/saleel.png'
 
 function Captains() {
 
