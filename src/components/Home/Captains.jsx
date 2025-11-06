@@ -73,7 +73,7 @@ function Captains() {
 
                             {/* team 2 */}
                             <div className="flex flex-col ">
-                                <h1 className="font-bold flex justify-center align-center text-xl mb-4 text-[#88011A]">BLUE</h1>
+                                <h1 className="font-bold flex justify-center align-center text-xl mb-4 text-[#88011A]">YELLOW</h1>
                             <div className="flex gap-4 w-full mx-auto">
 
                           <motion.div
@@ -117,7 +117,7 @@ function Captains() {
                             {/* team 3 */}
 
                             <div className="flex flex-col mb-6">
-                                <h1 className="font-bold text-[#88011A] flex justify-center align-center text-xl mb-4">GREEN</h1>
+                                <h1 className="font-bold text-[#88011A] flex justify-center align-center text-xl mb-4">BLUE</h1>
                             <div className="flex gap-4 w-full mx-auto">
 
                           <motion.div
@@ -158,7 +158,7 @@ function Captains() {
                             {/* team 4  */}
 
                             <div className="flex flex-col">
-                                <h1 className="font-bold text-[#88011A] flex justify-center align-center text-xl mb-4">YELLOW</h1>
+                                <h1 className="font-bold text-[#88011A] flex justify-center align-center text-xl mb-4">GREEN</h1>
                             <div className="flex gap-4 w-full mx-auto">
 
                           <motion.div
