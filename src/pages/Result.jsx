@@ -124,7 +124,7 @@ function Results() {
       </div>
 
       {/* Main Content */}
-      <div className="relative z-40 flex flex-col items-center justify-center px-10 py-10">
+      <div className="relative z-40 flex flex-col items-center justify-center px-5 py-10">
         <NavLink to="/" className="text-black font-semibold text-lg absolute top-6 left-10 z-10 link-custom">
           <FontAwesomeIcon icon={faAngleLeft} /> &nbsp;Home
         </NavLink>
@@ -206,7 +206,7 @@ function Results() {
                 exit={{ opacity: 0, x: 300 }}
                 viewport={{ once: true }}
               >
-                <div className="max-w-[450px] rounded-lg overflow-hidden mx-auto shadow-xl relative poster-card">
+                <div className="max-w-[350px] rounded-lg overflow-hidden mx-auto shadow-xl relative poster-card">
                   <img 
                     src={result.stage.toLowerCase() === "off stage" ? offStagePoster : onStagePoster} 
                     alt="stagePoster" 
@@ -223,7 +223,7 @@ function Results() {
                         </div> */}
                       </div>
 
-                      <div className="flex flex-col items-start justify-start absolute left-7 sm:left-10 top-20 sm:top-32 h-fit">
+                      <div className="flex flex-col items-start justify-start absolute left-7 sm:left-10 top-24  h-fit">
                         {/* <p className="w-full bg-blue-800 md:text-[14px] text-[10px] flex items-center justify-center py-1 px-4 rounded-full text-white font-semibold">
                           Fine Arts {result.stage.toUpperCase()} Result
                         </p> */}
@@ -234,30 +234,35 @@ function Results() {
                           </p>
                         </div>
                         
-                        <div className="flex flex-col  rounded-xl  respo-result-card sm:mt-6 mt-0 sm:gap-3">
-                          {/* Group winners by position and display badge once for each group */}
-                          {Object.entries(groupWinnersByPosition(result.winners)).map(([position, winners]) => (
-                            <div key={position} className="flex gap-2 items-center">
-                              <div>
-                                <img src={getBadgeImage(position)} alt={`Badge ${position}`} className="top-0 respo-badge max-w-3 md:max-w-5" />
-                              </div>
-                              <div className={`${winners.length > 1 ? '-mt-1' : '-mt-1'}`}>
-                                {/* Display winner(s) and department(s) for each position */}
-                                {winners.map((winner, index) => (
-                                  <div key={index}>
-                                    <p className={`font-semibold respo-winner ${winners.length > 1 ? 'more-winners' : ''}`}>
-                                      {winner.name}
-                                    </p>
-                                    <p className={` respo-winner-year text-black ${winners.length > 1 ? 'more-winners-year' : ''}`}>
-                                      {winner.team && <span> {winner.team} </span>}
-                                      
-                                    </p>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                <div className="flex flex-col rounded-xl respo-result-card gap-1 ">
+  {/* Group winners by position */}
+  {Object.entries(groupWinnersByPosition(result.winners)).map(([position, winners]) => (
+    <div key={position} className="flex items-center gap-4">
+      {/* Badge Image */}
+      <div>
+        <img
+          src={getBadgeImage(position)}
+          alt={`Badge ${position}`}
+          className="respo-badge"
+        />
+      </div>
+
+      {/* Winner Details */}
+      <div className="flex flex-col">
+        {winners.map((winner, index) => (
+          <div key={index} className="mb-1">
+            <p className="font-semibold respo-winner">{winner.name}</p>
+            {winner.team && (
+              <p className="respo-winner-year text-gray-700">{winner.team}</p>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  ))}
+</div>
+
+
                         {/* <img src={Congrats} alt="Congrats" className="w-44 h-auto mx-auto respo-congrats" /> */}
                       </div>
                       <div></div>

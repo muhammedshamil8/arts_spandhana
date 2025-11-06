@@ -17,7 +17,7 @@ const ProgramResultsAdmin = () => {
   const [programs, setPrograms] = useState([]);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState('view'); // 'view' | 'create'
+  const [viewMode, setViewMode] = useState('create'); // 'view' | 'create'
   const [submitting, setSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -88,59 +88,61 @@ const ProgramResultsAdmin = () => {
   };
 
   // ✅ Submit logic (Group vs Individual)
- const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
   e.preventDefault();
   setSuccessMessage('');
   setErrorMessage('');
   setSubmitting(true);
 
   try {
+    // Basic validation
     if (!formData.programId || formData.winners.some(w => !w.participantId)) {
       setErrorMessage('Please select a program and all participants.');
+      setSubmitting(false);
       return;
     }
 
     const selectedProgram = programs.find(p => p.id === formData.programId);
     if (!selectedProgram) {
       setErrorMessage('Selected program not found.');
+      setSubmitting(false);
       return;
     }
 
     const programName = selectedProgram.title;
     const isGroup = selectedProgram.isGroupItem;
-    const pointsMap = { '1st': 10, '2nd': 7, '3rd': 5 };
 
-    // Track how many points to give per team
+    // Object to track points per team
     const teamPointsToAdd = {};
 
-    // Process winners and prepare data for Firestore
-const winnersData = await Promise.all(formData.winners.map(async (winner) => {
-  const participantDoc = await getDoc(doc(db, 'participants', winner.participantId));
-  if (!participantDoc.exists()) {
-    throw new Error(`Selected participant not found: ${winner.participantId}`);
-  }
+    // Process winners
+    const winnersData = await Promise.all(formData.winners.map(async (winner) => {
+      const participantDoc = await getDoc(doc(db, 'participants', winner.participantId));
+      if (!participantDoc.exists()) {
+        throw new Error(`Selected participant not found: ${winner.participantId}`);
+      }
 
-  const participantData = participantDoc.data();
-  const points = winner.place === '1st' ? 10 : 
-                  winner.place === '2nd' ? 7 : 
-                  winner.place === '3rd' ? 5 : 1;
+      const participantData = participantDoc.data();
+      const points = winner.place === '1st' ? 10 :
+                     winner.place === '2nd' ? 7 :
+                     winner.place === '3rd' ? 5 : 1;
 
-  // 🧠 If it's a group item → store "John & Team" as name
-  const displayName = selectedProgram.isGroupItem
-    ? `${participantData.name} & Team`
-    : participantData.name;
+      const teamName = participantData.team || '';
+      if (teamName) {
+        teamPointsToAdd[teamName] = (teamPointsToAdd[teamName] || 0) + points;
+      }
 
-  return {
-    id: winner.participantId,
-    name: displayName,
-    team: participantData.team || '',
-    year: participantData.year || '',
-    points: points,
-    position: winner.place
-  };
-}));
+      const displayName = isGroup ? `${participantData.name} & Team` : participantData.name;
 
-
+      return {
+        id: winner.participantId,
+        name: displayName,
+        team: teamName,
+        year: participantData.year || '',
+        points,
+        position: winner.place
+      };
+    }));
 
     // Add result document
     const resultData = {
@@ -154,7 +156,7 @@ const winnersData = await Promise.all(formData.winners.map(async (winner) => {
 
     await addDoc(collection(db, 'programResults'), resultData);
 
-    // Update team totals
+    // Update team points
     for (const [teamName, addPoints] of Object.entries(teamPointsToAdd)) {
       if (!teamName) continue;
 
@@ -175,7 +177,7 @@ const winnersData = await Promise.all(formData.winners.map(async (winner) => {
       }
     }
 
-    // Reset and notify
+    // Reset form
     setFormData({
       programId: '',
       stage: 'on stage',
@@ -189,8 +191,9 @@ const winnersData = await Promise.all(formData.winners.map(async (winner) => {
     setErrorMessage(`Failed to add result: ${err.message}`);
   } finally {
     setSubmitting(false);
-  } 
+  }
 };
+
 
 
   // ✅ Delete result (with rollback)
