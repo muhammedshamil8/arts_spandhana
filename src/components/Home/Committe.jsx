@@ -84,7 +84,7 @@ function Committe() {
             <div className="flex flex-col items-center justify-center">
               <div className="flex items-center justify-end  w-full">
                 <h1 className="font-bold text-[#73052F] text-2xl  uppercase leading-6 text-right main-committee-heading">
-                  CONVENER
+                  DIRECTOR
                 </h1>
               </div>
               <div className="relative main-committee overflow-hidden">
