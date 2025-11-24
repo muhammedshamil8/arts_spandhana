@@ -89,7 +89,7 @@ const AdminLayout = () => {
         >
           <div className="flex flex-col justify-between h-screen fixed w-64">
             <div className="p-4 text-lg font-semibold text-[#E1072E] border-b flex justify-between items-center">
-              KALART2025
+              Spandhana
               {isMobile && (
                 <button 
                   onClick={() => setSidebarOpen(false)}

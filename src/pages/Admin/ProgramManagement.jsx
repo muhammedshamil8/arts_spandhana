@@ -131,48 +131,69 @@ const ProgramManagement = () => {
   };
 
   // 🔹 Handle Delete — remove program + related results + adjust team points
-  const handleDelete = async (programId) => {
-    if (window.confirm('Are you sure you want to delete this program? All related results and points will be adjusted.')) {
-      try {
-        // Get all related results
-        const resultsRef = collection(db, 'programResults');
-        const q = query(resultsRef, where('programId', '==', programId));
-        const resultsSnapshot = await getDocs(q);
+const handleDelete = async (programId) => {
+  if (!window.confirm("Are you sure you want to delete this program?")) return;
 
-        for (const resultDoc of resultsSnapshot.docs) {
-          const resultData = resultDoc.data();
-          const teamName = resultData.team;
-          const points = resultData.points || 0;
+  try {
+    const resultsSnapshot = await getDocs(
+      query(collection(db, "programResults"), where("programId", "==", programId))
+    );
 
-          // Find team by name
-          const teamsSnapshot = await getDocs(collection(db, 'teams'));
-          const teamDoc = teamsSnapshot.docs.find(t => t.data().name === teamName);
+    const teamsSnapshot = await getDocs(collection(db, "teams"));
 
-          if (teamDoc) {
-            const teamRef = doc(db, 'teams', teamDoc.id);
-            const teamSnap = await getDoc(teamRef);
-            if (teamSnap.exists()) {
-              const currentPoints = teamSnap.data().points || 0;
-              const newPoints = Math.max(0, currentPoints - points);
-              await updateDoc(teamRef, { points: newPoints });
-            }
+    const teamMap = {};
+    teamsSnapshot.docs.forEach(docSnap => {
+      const data = docSnap.data();
+      teamMap[data.name] = { id: docSnap.id, points: data.totalPoints || 0 };
+    });
+
+    for (const resultDoc of resultsSnapshot.docs) {
+      const result = resultDoc.data();
+
+      if (result.winners) {
+        // Individual
+        const teamAdjust = {};
+
+        for (const w of result.winners) {
+          if (w.team) {
+            teamAdjust[w.team] = (teamAdjust[w.team] || 0) + (w.points || 0);
           }
-
-          // Delete each result
-          await deleteDoc(doc(db, 'programResults', resultDoc.id));
         }
 
-        // Finally, delete the program
-        await deleteDoc(doc(db, 'programs', programId));
+        for (const [teamName, minus] of Object.entries(teamAdjust)) {
+          const team = teamMap[teamName];
+          if (team) {
+            const newPoints = Math.max(0, team.points - minus);
+            await updateDoc(doc(db, "teams", team.id), { totalPoints: newPoints });
+            team.points = newPoints;
+          }
+        }
 
-        setSuccessMessage('Program and its results deleted successfully!');
-        fetchPrograms();
-      } catch (error) {
-        console.error('Error deleting program:', error);
-        setErrorMessage('Failed to delete program.');
+      } else {
+        // Group event
+        const team = teamMap[result.team];
+        if (team) {
+          const newPoints = Math.max(0, team.points - (result.points || 0));
+          await updateDoc(doc(db, "teams", team.id), { totalPoints: newPoints });
+          team.points = newPoints;
+        }
       }
+
+      await deleteDoc(doc(db, "programResults", resultDoc.id));
     }
-  };
+
+    await deleteDoc(doc(db, "programs", programId));
+
+    setSuccessMessage("Program and results deleted successfully!");
+    fetchPrograms();
+
+  } catch (err) {
+    console.error(err);
+    setErrorMessage("Failed to delete program");
+  }
+};
+
+
 
   const resetForm = () => {
     setFormData({

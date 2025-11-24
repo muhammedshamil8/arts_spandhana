@@ -16,7 +16,7 @@
 
 /* Winner Name */
 .respo-winner {
-  font-size: 12px;
+  font-size: 12px !important;
   font-weight: 600;
   line-height: 1.4;
   color: #000000;

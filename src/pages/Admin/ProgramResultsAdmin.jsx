@@ -197,54 +197,82 @@ const handleSubmit = async (e) => {
 
 
   // ✅ Delete result (with rollback)
-  const handleDeleteResult = async (resultId) => {
-    if (!window.confirm('Delete this result? Points will be rolled back.')) return;
-    try {
-      const resultRef = doc(db, 'programResults', resultId);
-      const resultSnap = await getDoc(resultRef);
-      const resultData = resultSnap.data();
+const handleDeleteResult = async (resultId) => {
+  if (!window.confirm("Delete this result? Points will be rolled back.")) return;
 
-      if (resultData.isGroupItem) {
-        const teamQuery = query(collection(db, 'teams'), where('name', '==', resultData.team));
-        const teamSnap = await getDocs(teamQuery);
-        if (!teamSnap.empty) {
-          const teamRef = doc(db, 'teams', teamSnap.docs[0].id);
-          const currentPoints = teamSnap.docs[0].data().totalPoints || 0;
-          await updateDoc(teamRef, { totalPoints: Math.max(0, currentPoints - resultData.points) });
+  try {
+    // 1. Load result
+    const resultRef = doc(db, "programResults", resultId);
+    const resultSnap = await getDoc(resultRef);
+    const result = resultSnap.data();
+
+    // 2. Load all teams once
+    const teamsSnapshot = await getDocs(collection(db, "teams"));
+
+    // Create map: teamName → {id, points}
+    const teamMap = {};
+    teamsSnapshot.docs.forEach(t => {
+      const d = t.data();
+      teamMap[d.name] = { id: t.id, points: d.totalPoints || 0 };
+    });
+
+    // 3. GROUP ITEM (simple rollback)
+    if (result.isGroupItem) {
+      const team = teamMap[result.team];
+      if (team) {
+        const newPoints = Math.max(0, team.points - result.points);
+        await updateDoc(doc(db, "teams", team.id), { totalPoints: newPoints });
+
+        // update map
+        team.points = newPoints;
+      }
+
+    } else {
+      // 4. INDIVIDUAL + TEAM ROLLBACK
+      const teamAdjust = {};
+
+      for (const winner of result.winners) {
+        // Rollback participant points
+        const pRef = doc(db, "participants", winner.id);
+        const pSnap = await getDoc(pRef);
+        if (pSnap.exists()) {
+          const oldPts = pSnap.data().totalPoints || 0;
+          const updated = Math.max(0, oldPts - winner.points);
+          await updateDoc(pRef, { totalPoints: updated });
         }
-      } else {
-        // rollback individuals + teams
-        const teamAdjust = {};
-        for (const winner of resultData.winners) {
-          const pRef = doc(db, 'participants', winner.id);
-          const pSnap = await getDoc(pRef);
-          if (pSnap.exists()) {
-            const currentPts = pSnap.data().totalPoints || 0;
-            await updateDoc(pRef, { totalPoints: Math.max(0, currentPts - winner.points) });
-          }
-          if (winner.team) {
-            teamAdjust[winner.team] = (teamAdjust[winner.team] || 0) + winner.points;
-          }
-        }
-        for (const [teamName, pts] of Object.entries(teamAdjust)) {
-          const teamQuery = query(collection(db, 'teams'), where('name', '==', teamName));
-          const teamSnap = await getDocs(teamQuery);
-          if (!teamSnap.empty) {
-            const tRef = doc(db, 'teams', teamSnap.docs[0].id);
-            const current = teamSnap.docs[0].data().totalPoints || 0;
-            await updateDoc(tRef, { totalPoints: Math.max(0, current - pts) });
-          }
+
+        // Team adjustment
+        if (winner.team) {
+          teamAdjust[winner.team] = (teamAdjust[winner.team] || 0) + winner.points;
         }
       }
 
-      await deleteDoc(resultRef);
-      setResults(results.filter(r => r.id !== resultId));
-      setSuccessMessage('Result deleted and points rolled back.');
-    } catch (error) {
-      console.error(error);
-      setErrorMessage('Failed to delete result.');
+      // Apply team adjustments
+      for (const [teamName, minusPts] of Object.entries(teamAdjust)) {
+        const team = teamMap[teamName];
+        if (team) {
+          const newPoints = Math.max(0, team.points - minusPts);
+          await updateDoc(doc(db, "teams", team.id), { totalPoints: newPoints });
+
+          // update local map
+          team.points = newPoints;
+        }
+      }
     }
-  };
+
+    // 5. Delete final result
+    await deleteDoc(resultRef);
+
+    // Update UI
+    setResults(results.filter(r => r.id !== resultId));
+    setSuccessMessage("Result deleted and points rolled back.");
+
+  } catch (err) {
+    console.error(err);
+    setErrorMessage("Failed to delete result.");
+  }
+};
+
 
   if (loading) return <p className="p-6 text-gray-700">Loading...</p>;
 

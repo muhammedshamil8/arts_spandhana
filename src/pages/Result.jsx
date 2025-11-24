@@ -237,7 +237,7 @@ function Results() {
                 <div className="flex flex-col rounded-xl respo-result-card gap-1 ">
   {/* Group winners by position */}
   {Object.entries(groupWinnersByPosition(result.winners)).map(([position, winners]) => (
-    <div key={position} className="flex items-center gap-4">
+    <div key={position} className="flex items-center gap-4 mb-1">
       {/* Badge Image */}
       <div>
         <img
@@ -250,7 +250,7 @@ function Results() {
       {/* Winner Details */}
       <div className="flex flex-col">
         {winners.map((winner, index) => (
-          <div key={index} className="mb-1">
+          <div key={index} className="mb-0">
             <p className="font-semibold respo-winner">{winner.name}</p>
             {winner.team && (
               <p className="respo-winner-year text-gray-700">{winner.team}</p>
